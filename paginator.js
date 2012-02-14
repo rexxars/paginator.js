@@ -2,43 +2,68 @@ Paginator = (function() {
 
     var p = function() {};
 
+    /**
+     * Sets the total number of items in the dataset
+     */
     p.prototype.setTotalItems = function(num) {
         this.totalItems = num;
         return this;
     };
 
+    /**
+     * Returns the total number of items (or 0 if not defined)
+     */
     p.prototype.getTotalItems = function() {
         return this.totalItems || 0;
     };
 
+    /**
+     * Sets the number of items per page
+     */
     p.prototype.setItemsPerPage = function(num) {
         this.itemsPerPage = num;
         return this;
     };
 
+    /**
+     * Returns the number of items per page
+     * Defaults to 10.
+     */
     p.prototype.getItemsPerPage = function() {
         return this.itemsPerPage || 10;
     };
 
+    /**
+     * Sets an array to use as the dataset, for use with getItemsByPage() etc
+     */
     p.prototype.setData = function(data) {
         this.data = data;
         this.setTotalItems(data.length);
         return this;
     };
 
+    /**
+     * Sets the current page number
+     */
     p.prototype.setCurrentPage = function(num) {
         this.currentPage = this.normalize(num);
         return this;
     };
 
-    p.prototype.count = function() {
+    /**
+     * Returns the total number of pages
+     */
+    p.prototype.getNumberOfPages = function() {
         return Math.ceil(this.getTotalItems() / this.getItemsPerPage());
     };
 
+    /**
+     * Normalizes page number by making sure it is within the range of the paginator
+     */
     p.prototype.normalize = function(num) {
         num = Math.max(parseInt(num, 10), 1);
 
-        var pages = this.count();
+        var pages = this.getNumberOfPages();
         if (pages > 0 && num > pages) {
             num = pages;
         }
@@ -46,6 +71,9 @@ Paginator = (function() {
         return num;
     };
 
+    /**
+     * Returns the given page of the dataset, or false if no data has been set
+     */
     p.prototype.getItemsByPage = function(page) {
         page = this.normalize(page);
 
@@ -53,24 +81,37 @@ Paginator = (function() {
         return this.data ? this.data.slice(offset, this.getItemsPerPage()) : false;
     };
 
+    /**
+     * Returns the current page of the dataset, or false if no data has been set
+     */
     p.prototype.getCurrentItems = function() {
         return this.getItemsByPage(this.currentPage || 1);
     };
 
+    /**
+     * Sets page range (number of pages to show in pagination control)
+     */
     p.prototype.setPageRange = function(num) {
         this.pageRange = num;
         return this;
     };
 
+    /**
+     * Returns the set page range (number of pages to show in pagination control)
+     * Defaults to 10.
+     */
     p.prototype.getPageRange = function() {
         return this.pageRange || 10;
     };
 
+    /**
+     * Creates an array containing the page numbers within the current range
+     */
     p.prototype.getPagesInRange = function() {
         var pageRange = this.getPageRange();
 
         var pageNumber = this.currentPage || 1;
-        var pageCount  = this.count();
+        var pageCount  = this.getNumberOfPages();
 
         if (pageRange > pageCount) {
             pageRange = pageCount;
@@ -101,11 +142,14 @@ Paginator = (function() {
         return pages;
     };
 
+    /**
+     * Creates an object containing all the information needed to build a pagination control
+     */
     p.prototype.getInfo = function() {
-        var pageCount = this.count();
+        var pageCount = this.getNumberOfPages();
         var current   = this.currentPage || 1;
 
-        var pages = {
+        var info = {
             pageCount    : pageCount,
             itemsPerPage : this.getItemsPerPage(),
             totalItems   : this.getTotalItems(),
@@ -116,28 +160,40 @@ Paginator = (function() {
 
         // Previous and next
         if (current - 1 > 0) {
-            pages.previous = current - 1;
+            info.previous = current - 1;
         }
 
         if (current + 1 <= pageCount) {
-            pages.next = current + 1;
+            info.next = current + 1;
         }
 
         // Pages in range
-        pages.pagesInRange     = this.getPagesInRange();
-        pages.firstPageInRange = Math.min.apply(Math, pages.pagesInRange);
-        pages.lastPageInRange  = Math.max.apply(Math, pages.pagesInRange);
+        info.pagesInRange     = this.getPagesInRange();
+        info.firstPageInRange = Math.min.apply(Math, info.pagesInRange);
+        info.lastPageInRange  = Math.max.apply(Math, info.pagesInRange);
 
-        return pages;
+        return info;
     };
 
-    p.prototype.getUrl = function(page, url) {
+    /**
+     * Build a URL based on the passed page and URL template
+     *
+     * Allowed template variables:
+     *   {page}   - Replaced with the page number passed
+     *   {limit}  - Replaced with the number of items per page
+     *   {offset} - Replaced with the calculated offset for passed page number
+     */
+    p.prototype.getUrl = function(pageNum, url) {
+        var page   = this.normalize(pageNum);
         var offset = (page - 1) * this.getItemsPerPage();
         var limit  = this.getItemsPerPage();
         return (url || '?page={page}').replace(/\{page\}/g, page).replace(/\{offset\}/g, offset).replace(/\{limit\}/g, limit);
     }
 
-    p.prototype.getHtml = function(options) {
+    /**
+     * Creates HTML markup for a pagination control
+     */
+    p.prototype.render = function(options) {
         var pages = this.getInfo(), o = options || {};
         if (pages.pageCount <= 1) {
             return '';
@@ -186,10 +242,6 @@ Paginator = (function() {
         html.push('</ul>');
 
         return html.join('');
-    };
-
-    p.prototype.render = function(options) {
-        return this.getHtml(options);
     };
 
     return p;
