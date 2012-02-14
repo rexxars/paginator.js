@@ -1,4 +1,4 @@
-Paginator = (function($) {
+Paginator = (function() {
 
     var p = function() {};
 
@@ -194,4 +194,4 @@ Paginator = (function($) {
 
     return p;
 
-})(window.jQuery || window.Zepto);
+})();
