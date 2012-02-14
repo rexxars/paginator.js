@@ -195,3 +195,7 @@ Paginator = (function() {
     return p;
 
 })();
+
+if (typeof module !== 'undefined') {
+    module.exports = Paginator;
+}
